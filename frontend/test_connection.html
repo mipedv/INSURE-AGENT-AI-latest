@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>InsurAgent API Connection Test</h1>
+    
+    <div id="results"></div>
+    
+    <button onclick="testConnection()">Test Basic Connection</button>
+    <button onclick="testCORS()">Test CORS</button>
+    <button onclick="testCSVUpload()">Test CSV Upload</button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const resultsDiv = document.getElementById('results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+
+        async function testConnection() {
+            addResult('Testing basic connection to ' + API_BASE_URL, 'info');
+            
+            try {
+                const response = await fetch(API_BASE_URL + '/', {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Connection successful! Response: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    addResult(`❌ Connection failed with status: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Connection error: ${error.message}`, 'error');
+                console.error('Connection error:', error);
+            }
+        }
+
+        async function testCORS() {
+            addResult('Testing CORS preflight request...', 'info');
+            
+            try {
+                const response = await fetch(API_BASE_URL + '/verify-csv', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    addResult('✅ CORS preflight successful!', 'success');
+                    
+                    // Show CORS headers
+                    const corsHeaders = {};
+                    response.headers.forEach((value, key) => {
+                        if (key.toLowerCase().startsWith('access-control-')) {
+                            corsHeaders[key] = value;
+                        }
+                    });
+                    addResult(`CORS Headers: <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>`, 'info');
+                } else {
+                    addResult(`❌ CORS preflight failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ CORS test error: ${error.message}`, 'error');
+                console.error('CORS error:', error);
+            }
+        }
+
+        async function testCSVUpload() {
+            addResult('Testing CSV upload endpoint...', 'info');
+            
+            // Create a simple test CSV
+            const csvContent = `chief_complaints,symptoms,diagnosis_description,service_detail,payer_product_category_name
+Chest pain,Shortness of breath,Heart attack,ECG test,Cardiology medications`;
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const formData = new FormData();
+            formData.append('file', blob, 'test.csv');
+            
+            try {
+                const response = await fetch(API_BASE_URL + '/verify-csv', {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('✅ CSV upload successful!', 'success');
+                    addResult(`Response: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'info');
+                } else {
+                    const errorText = await response.text();
+                    addResult(`❌ CSV upload failed: ${response.status} ${response.statusText}`, 'error');
+                    addResult(`Error details: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ CSV upload error: ${error.message}`, 'error');
+                console.error('CSV upload error:', error);
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            addResult('Page loaded. Click buttons to test API connectivity.', 'info');
+        });
+    </script>
+</body>
+</html> 

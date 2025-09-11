@@ -1,0 +1,15 @@
+{
+ "argv": [
+  "D:\\WORK\\LONGSPUR\\TASK-INSUR\\Insure_agent_model\\insurvenv\\Scripts\\python.exe",
+  "-Xfrozen_modules=off",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "Python (insurvenv)",
+ "language": "python",
+ "metadata": {
+  "debugger": true
+ }
+}

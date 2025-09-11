@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsurAgent - AI Insurance Claim Verification</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Gate -->
+    <div id="loginContainer" class="container-fluid" style="min-height:100vh;">
+        <div class="row h-100">
+            <div class="col-md-5 d-flex align-items-center justify-content-center p-5 login-left">
+                <div class="w-100 login-card" style="max-width:420px;">
+                    <h2 class="mb-4 login-brand"><span class="brand-dark">Insur</span><span class="brand-accent">Agent</span></h2>
+                    <p class="text-muted mb-4">Login to Account with Email and Password</p>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Email address:</label>
+                            <input type="email" id="loginEmail" class="form-control" placeholder="xyz@abc.com" required>
+                        </div>
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0">Password</label>
+                            <a href="#" class="small text-muted">Forget Password?</a>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" id="loginPassword" class="form-control" placeholder="••••••" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="rememberMe" checked>
+                            <label class="form-check-label" for="rememberMe">Remember Password</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                        <div id="loginError" class="text-danger small mt-3" style="display:none;">Invalid credentials</div>
+                    </form>
+                    <div class="mt-3 text-muted small">Don’t have an account? <span class="text-decoration-underline">Create Account</span></div>
+                </div>
+            </div>
+            <div class="col-md-7 p-0 d-none d-md-block login-right">
+                <img src="media/login.png" alt="login" style="width:100%;height:100%;object-fit:cover;display:block;">
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" style="display:none;">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3 class="logo">Insur<span>Agent</span></h3>
+            </div>
+            <nav class="sidebar-menu sidebar-nav">
+                <a href="#dashboard" class="menu-item active" data-page="dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#claims" class="menu-item" data-page="claims">
+                    <i class="bi bi-grid"></i>
+                    <span>Claims</span>
+                </a>
+                <a href="#pending" class="menu-item" data-page="pending">
+                    <i class="bi bi-person"></i>
+                    <span>Pending Review</span>
+                </a>
+                <a href="#finance" class="menu-item" data-page="finance">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Finance</span>
+                </a>
+                <a href="#demo" class="menu-item" data-page="demo">
+                    <i class="bi bi-robot"></i>
+                    <span>Demo</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-divider"></div>
+                <a href="#users" class="menu-item" data-page="users" aria-label="Users">
+                    <i class="bi bi-people"></i>
+                    <span>Users</span>
+                </a>
+                <a href="#settings" class="menu-item" data-page="settings" aria-label="Settings">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Navigation Bar -->
+            <div class="top-nav">
+                <div class="menu-toggle">
+                    <i class="bi bi-list"></i>
+                </div>
+                <div class="search-container">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search" class="search-input">
+                </div>
+                <div class="user-menu">
+                    <div class="notification">
+                        <i class="bi bi-bell"></i>
+                        <span class="badge">2</span>
+                    </div>
+                    <div class="language-selector">
+                        <img src="https://flagcdn.com/w40/bh.png" alt="Bahrain" class="flag-icon">
+                        <span>English</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="user-profile">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Profile" class="profile-image">
+                        <div class="user-info">
+                            <span class="user-name">Ahmed</span>
+                            <span class="user-role">Admin</span>
+                        </div>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div id="dashboardContainer" class="page-container active">
+                <!-- Metrics Cards -->
+                <div class="metrics-container">
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <h3>Total Claims</h3>
+                            <h2 class="metric-value">3200</h2>
+                        </div>
+                        <div class="metric-icon purple">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <h3>Auto-Submission</h3>
+                            <h2 class="metric-value">2900</h2>
+                        </div>
+                        <div class="metric-icon yellow">
+                            <i class="bi bi-box"></i>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <h3>Manual Review</h3>
+                            <h2 class="metric-value">251</h2>
+                        </div>
+                        <div class="metric-icon green">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <h3>Resubmission</h3>
+                            <h2 class="metric-value">49</h2>
+                        </div>
+                        <div class="metric-icon orange">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload Section -->
+                <div class="upload-section">
+                    <div class="upload-container">
+                        <div class="choose-file">
+                            <span>Choose File</span>
+                            <span class="file-status">No file chosen</span>
+                        </div>
+                        <button class="upload-btn">
+                            <i class="bi bi-upload"></i>
+                            Upload Claims File
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Claims Management Section -->
+                <div class="claims-section">
+                    <div class="section-header">
+                        <h2>Manage Claims</h2>
+                        <div class="search-filter">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" placeholder="Search">
+                            </div>
+                            <div class="filter-dropdown">
+                                <button class="btn-filter">
+                                    Department
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div class="filter-dropdown">
+                                <button class="btn-filter">
+                                    Mode Status
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div class="filter-dropdown">
+                                <button class="btn-filter">
+                                    October
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Claims Table -->
+                    <div class="claims-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Claim ID</th>
+                                    <th>Department</th>
+                                    <th>Insurance</th>
+                                    <th>Mode</th>
+                                    <th>Approval Probability</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="claim-id">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                            <div>
+                                                <span class="name">John</span>
+                                                <span class="id">12345</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>General Medicine</td>
+                                    <td>MetLife</td>
+                                    <td>Hybrid</td>
+                                    <td>
+                                        <div class="probability-container">
+                                            <span>80%</span>
+                                            <div class="probability-bar">
+                                                <div class="probability-fill" style="width: 80%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action view"><i class="bi bi-eye"></i></button>
+                                            <button class="btn-action edit"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="claim-id">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                            <div>
+                                                <span class="name">Mohammed</span>
+                                                <span class="id">12345</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>General Medicine</td>
+                                    <td>MetLife</td>
+                                    <td>Automated</td>
+                                    <td>
+                                        <div class="probability-container">
+                                            <span>100%</span>
+                                            <div class="probability-bar">
+                                                <div class="probability-fill" style="width: 100%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action view"><i class="bi bi-eye"></i></button>
+                                            <button class="btn-action edit"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="claim-id">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                            <div>
+                                                <span class="name">Rahul</span>
+                                                <span class="id">12345</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>General Medicine</td>
+                                    <td>MetLife</td>
+                                    <td>Automated</td>
+                                    <td>
+                                        <div class="probability-container">
+                                            <span>98%</span>
+                                            <div class="probability-bar">
+                                                <div class="probability-fill" style="width: 98%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action view"><i class="bi bi-eye"></i></button>
+                                            <button class="btn-action edit"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Metrics & Visuals Section -->
+                <div class="metrics-visuals-section">
+                    <h2>Key Metrics & Visuals</h2>
+                    <div class="visuals-container">
+                        <div class="visual-card">
+                            <div class="visual-header">
+                                <h3>Claim Breakdown</h3>
+                                <button class="btn-more"><i class="bi bi-three-dots"></i></button>
+                            </div>
+                            <div class="visual-content">
+                                <div class="chart-placeholder">Chart Visualization</div>
+                            </div>
+                        </div>
+                        <div class="visual-card">
+                            <div class="visual-header">
+                                <h3>Approval Rate Trends</h3>
+                                <button class="btn-more"><i class="bi bi-three-dots"></i></button>
+                            </div>
+                            <div class="visual-content">
+                                <div class="chart-placeholder">Chart Visualization</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claims Page -->
+            <div id="claimsContainer" class="page-container" style="display: none;">
+                <div class="section-header">
+                    <h2>Claims Management</h2>
+                    <p>Manage and review insurance claims</p>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Claims management page is under development.
+                </div>
+            </div>
+
+            <!-- Pending Page -->
+            <div id="pendingContainer" class="page-container" style="display: none;">
+                <div class="section-header">
+                    <h2>Pending Reviews</h2>
+                    <p>Claims awaiting manual review</p>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Pending reviews page is under development.
+                </div>
+            </div>
+
+            <!-- Finance Page -->
+            <div id="financeContainer" class="page-container" style="display: none;">
+                <div class="section-header">
+                    <h2>Financial Analytics</h2>
+                    <p>Financial reports and analytics</p>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Financial analytics page is under development.
+                </div>
+            </div>
+
+            <!-- Users Page -->
+            <div id="usersContainer" class="page-container" style="display: none;">
+                <div class="section-header">
+                    <h2>User Management</h2>
+                    <p>Manage system users and permissions</p>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    User management page is under development.
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settingsContainer" class="page-container" style="display: none;">
+                <div class="section-header">
+                    <h2>System Settings</h2>
+                    <p>Configure system preferences and settings</p>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Settings page is under development.
+                </div>
+            </div>
+
+            <!-- Demo Page -->
+            <div id="demoContainer" class="page-container" style="display: none;">
+                <div class="demo-header">
+                    <div class="demo-title-section">
+                        <h1>AI Insurance Claim Verification</h1>
+                        <p class="demo-subtitle">Upload your insurance claims data and get instant AI-powered verification results</p>
+                    </div>
+                </div>
+
+                <!-- Upload Methods Section -->
+                <div class="upload-methods-section">
+                    <div class="row">
+                        <!-- File Upload Card -->
+                        <div class="col-md-6">
+                            <div class="upload-method-card">
+                                <div class="upload-card-header">
+                                    <div class="upload-card-icon">
+                                        <i class="bi bi-cloud-upload"></i>
+                                    </div>
+                                    <h3>Batch Upload</h3>
+                                    <p>Upload CSV or Excel files with multiple claims</p>
+                                </div>
+                                
+                                <div class="upload-area" id="uploadDropzone">
+                                    <div class="upload-content">
+                                        <div class="upload-icon-large">
+                                            <i class="bi bi-file-earmark-spreadsheet"></i>
+                                        </div>
+                                        <div class="upload-text">
+                                            <h4>Drop your files here</h4>
+                                            <p>or <span class="browse-link">browse files</span></p>
+                                            <small class="text-muted">Supports CSV, XLSX files up to 10MB</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="fileUpload" accept=".csv,.xlsx,.xls" style="display: none;">
+                                </div>
+
+                                <div class="upload-features">
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle text-success"></i>
+                                        <span>Batch processing</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle text-success"></i>
+                                        <span>Progress tracking</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle text-success"></i>
+                                        <span>Detailed reports</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Entry Card -->
+                        <div class="col-md-6">
+                            <div class="upload-method-card">
+                                <div class="upload-card-header">
+                                    <div class="upload-card-icon">
+                                        <i class="bi bi-file-text"></i>
+                                    </div>
+                                    <h3>Single Claim</h3>
+                                    <p>Verify individual claims manually</p>
+                                </div>
+
+                                <div class="manual-entry-section">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Chief Complaint</label>
+                                        <textarea class="form-control" id="complaint" rows="2" placeholder="Enter the main health complaint..."></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Symptoms</label>
+                                        <textarea class="form-control" id="symptoms" rows="2" placeholder="List the symptoms..."></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Diagnosis</label>
+                                        <input type="text" class="form-control" id="diagnosis" placeholder="Enter diagnosis...">
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">Lab Tests</label>
+                                                <input type="text" class="form-control" id="lab" placeholder="Lab tests...">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-group mb-3">
+                                                <label class="form-label">Pharmacy</label>
+                                                <input type="text" class="form-control" id="pharmacy" placeholder="Medications...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button class="btn btn-primary w-100" id="verifySingleBtn">
+                                        <i class="bi bi-shield-check me-2"></i>
+                                        Verify Claim
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Section -->
+                <div class="config-section">
+                    <div class="config-card">
+                        <h4><i class="bi bi-gear me-2"></i>Configuration</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Insurance Company</label>
+                                    <select class="form-select" id="insurerSelect">
+                                        <option value="GLOBEMED" selected>GLOBEMED</option>
+                                        <option value="MEDNET">MEDNET</option>
+                                        <option value="NEXTCARE">NEXTCARE</option>
+                                        <option value="METLIFE">METLIFE</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Policy Type</label>
+                                    <select class="form-select" id="policySelect">
+                                        <option value="FMC">FMC Insurance</option>
+                                        <option value="GARMCO" selected>GARMCO Corporate</option>
+                                        <option value="ALBA">ALBA Individual</option>
+                                        <option value="BAPCO">BAPCO Family</option>
+                                        <option value="GULF_AIR">Gulf Air Premium</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Verification Mode</label>
+                                    <select class="form-select" id="modeSelect">
+                                        <option value="standard" selected>Standard</option>
+                                        <option value="strict">Strict Compliance</option>
+                                        <option value="lenient">Lenient Review</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-outline-warning btn-sm" onclick="forceClearCache()" title="Clear all cached data and reset the system">
+                                        <i class="bi bi-trash3 me-1"></i>Clear Cache & Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section (Hidden by default) -->
+                <div id="progressContainer" class="progress-section" style="display: none;">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <h4><i class="bi bi-hourglass-split me-2"></i>Processing Claims</h4>
+                            <span class="progress-text" id="progressText">0%</span>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 id="progressBar" role="progressbar" style="width: 0%" 
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <small class="text-muted">Please wait while we analyze your claims data...</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Preview Section (Hidden by default) -->
+                <div id="dataPreviewSection" class="preview-section" style="display: none;">
+                    <div class="preview-card">
+                        <div class="preview-header">
+                            <h4 id="previewTitle">Data Preview</h4>
+                            <div class="preview-actions">
+                                <button class="btn btn-outline-secondary" id="backToUpload">
+                                    <i class="bi bi-arrow-left me-2"></i>Back
+                                </button>
+                                <button class="btn btn-primary" id="verifyBatchBtn">
+                                    <i class="bi bi-play-circle me-2"></i>Start Verification
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Patient Name</th>
+                                        <th>Complaint</th>
+                                        <th>Symptoms</th>
+                                        <th>Diagnosis</th>
+                                        <th>Lab</th>
+                                        <th>Pharmacy</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewTableBody">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsContainer" class="results-section" style="display: none;">
+                    <div class="results-header">
+                        <h3><i class="bi bi-clipboard-check me-2"></i>Verification Results</h3>
+                        <div class="results-actions">
+                            <button class="btn btn-outline-primary" id="exportResults">
+                                <i class="bi bi-download me-2"></i>Export
+                            </button>
+                            <button class="btn btn-secondary" id="resetDemo">
+                                <i class="bi bi-arrow-clockwise me-2"></i>New Upload
+                            </button>
+                        </div>
+                    </div>
+                    <div class="results-grid">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Single Result Modal -->
+                <div class="modal fade" id="singleResultModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Claim Verification Result</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" id="singleResultContent">
+                                <!-- Single result content will be populated here -->
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patient Details Section (Hidden by default) -->
+                <div id="patientDetailsSection" class="patient-details-section" style="display: none;">
+                    <!-- Patient details content will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+        
+    <!-- Script imports -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

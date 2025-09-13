@@ -227,7 +227,7 @@ def query_llm(prompt: str, model: str = "gpt-4o-mini", system_prompt: Optional[s
         
         print(f"Error querying LLM: {e}")
         return MockLLM.get_mock_response(prompt, field_name, value)
-        
+
 # Vector Database Population
 def load_policy_data(collections: Dict[str, Any], policy_data: Dict[str, List[str]]) -> None:
     """Load policy data into ChromaDB collections"""

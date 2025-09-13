@@ -12,7 +12,7 @@ timeout /t 5 /nobreak >nul
 echo.
 echo Starting Frontend Server (Port 8080)...
 cd frontend
-start "Frontend Server" cmd /k "python -m http.server 8080"
+start "Frontend Server" cmd /k "python -m http.server 8001"
 
 echo.
 echo Both servers are starting...

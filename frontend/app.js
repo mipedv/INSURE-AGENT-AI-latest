@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
                 const pwd = (document.getElementById('loginPassword')?.value || '').trim();
                 const remember = document.getElementById('rememberMe')?.checked;
-                const ok = (email === 'futurvy@gmail.com' && pwd === '9633228522');
+                const ok = (email === 'alshifa@gmail.com' && pwd === '123456789');
                 const err = document.getElementById('loginError');
                 if (ok) {
                     if (remember) localStorage.setItem('insuragent_authed', 'true');
@@ -3466,3 +3466,47 @@ function generateClinicalReasoning(flaggedField, flaggedItem, patient, result) {
     // Default reasoning for other cases
     return `🧠 Reason: Clinical data does not follow expected medical logic patterns`;
 }
+
+// Sample Cases Download Function
+function downloadSampleCase(caseType) {
+    const sampleCases = {
+        mixed: {
+            filename: 'test_cases.csv',
+            data: [
+                ['patient_name', 'chief_complaints', 'symptoms', 'diagnosis_description', 'service_detail', 'payer_product_category_name'],
+                ['Ahmed M', 'Severe upper abdominal pain, worsens after meals', 'Heartburn, nausea, bloating', 'Gastritis', 'H. pylori antigen test', 'Procid 40 mg, 1 tablet daily for 10 days'],
+                ['Fatima A', 'Joint pain in knees', 'Pain aggravated by walking, mild swelling in knees', 'Acute Sinusitis', 'Nasal swab culture', 'Amoxicillin 500 mg, 1 tablet twice daily for 7 days'],
+                ['Mohammed R', 'Fever with cough for 3 days', 'Sore throat, runny nose, mild body ache', 'Acute Upper Respiratory Tract Infection (URTI)', 'CBC (Complete Blood Count)', 'Adol 500 mg, 1 tablet every 6 hours for 5 days'],
+                ['Ali H', 'Chest pain and shortness of breath', 'Cough with phlegm, wheezing', 'Acute Bronchitis', 'Chest X-ray', 'Amoxicillin 500 mg, 1 tablet three times daily for 15 days']
+            ]
+        }
+    };
+
+    const caseData = sampleCases[caseType];
+    if (!caseData) {
+        console.error('Invalid case type:', caseType);
+        return;
+    }
+
+    // Convert data to CSV format
+    const csvContent = caseData.data.map(row => 
+        row.map(field => `"${field}"`).join(',')
+    ).join('\n');
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', caseData.filename);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show success message
+    showAlert(`Sample case "${caseType}" downloaded successfully!`, 'success');
+}
+

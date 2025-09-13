@@ -1,0 +1,5 @@
+patient_name,chief_complaints,symptoms,diagnosis_description,service_detail,payer_product_category_name
+Ahmed M,"Severe upper abdominal pain, worsens after meals","Heartburn, nausea, bloating",Gastritis,H. pylori antigen test,"Procid 40 mg, 1 tablet daily for 10 days"
+Fatima A,Joint pain in knees,"Pain aggravated by walking, mild swelling in knees",Acute Sinusitis,Nasal swab culture,"Amoxicillin 500 mg, 1 tablet twice daily for 7 days"
+Mohammed R,Fever with cough for 3 days,"Sore throat, runny nose, mild body ache",Acute Upper Respiratory Tract Infection (URTI),CBC (Complete Blood Count),"Adol 500 mg, 1 tablet every 6 hours for 5 days "
+muneer,pain ,bleeding,piles,x-ray,"Panadol 500 mg, 1 tablet every 6 hours for 5 days "

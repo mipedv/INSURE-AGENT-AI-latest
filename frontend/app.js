@@ -286,7 +286,7 @@ let claimsData = [
         patientName: 'John Doe',
         claimNumber: '12345',
         department: 'General Medicine',
-        insurance: 'MetLife',
+        insurance: 'FMC INSURANCE',
         mode: 'Review', // If score not 100%, it needs manual review
         approvalProbability: 80,
         isDynamic: false
@@ -296,7 +296,7 @@ let claimsData = [
         patientName: 'Mohammed',
         claimNumber: '12345',
         department: 'General Medicine',
-        insurance: 'MetLife',
+        insurance: 'UNITED INSURANCE',
         mode: 'Automated',
         approvalProbability: 100,
         isDynamic: false
@@ -306,7 +306,7 @@ let claimsData = [
         patientName: 'Hamza',
         claimNumber: '12345',
         department: 'General Medicine',
-        insurance: 'MetLife',
+        insurance: 'STAR INSURANCE',
         mode: 'Automated',
         approvalProbability: 98,
         isDynamic: false

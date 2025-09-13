@@ -34,60 +34,101 @@ const pageContainers = document.querySelectorAll('.page-container');
 // Navigation state management
 let currentPage = window.location.hash.substring(1) || 'dashboard';
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    // Simple login gate - Always show login page first
-    try {
+/**
+ * Check if user is authenticated
+ */
+function isAuthenticated() {
+    return sessionStorage.getItem('insuragent_session_authed') === 'true';
+}
+
+/**
+ * Navigate to a specific page with authentication guard
+ */
+function navigateTo(page, replace = false) {
+    // Authentication guard
+    if (!isAuthenticated() && page !== 'login') {
+        // If not authenticated and trying to access protected route, redirect to login
+        page = 'login';
+    } else if (isAuthenticated() && page === 'login') {
+        // If authenticated and trying to access login, redirect to dashboard
+        page = 'dashboard';
+    }
+    
+    if (page === 'login') {
+        // Show login, hide app
         const loginContainer = document.getElementById('loginContainer');
         const appRoot = document.querySelector('.app-container');
-        const sessionAuthed = sessionStorage.getItem('insuragent_session_authed') === 'true';
+        
         if (loginContainer && appRoot) {
-            if (sessionAuthed) {
-                // Already authenticated in this browser session
-                loginContainer.style.display = 'none';
-                appRoot.style.display = 'block';
-                document.body.classList.remove('login-mode');
-                // Ensure app state exists for back/forward
-                window.history.replaceState({ view: 'app' }, '', window.location.href);
+            loginContainer.style.display = 'block';
+            appRoot.style.display = 'none';
+            document.body.classList.add('login-mode');
+            
+            if (replace) {
+                window.history.replaceState({ view: 'login' }, '', window.location.pathname);
             } else {
-                // First visit this session: show login
-                loginContainer.style.display = 'block';
-                appRoot.style.display = 'none';
-                document.body.classList.add('login-mode');
-                // Push login state for proper back behavior
-                window.history.replaceState({ view: 'login' }, '', window.location.href);
+                window.history.pushState({ view: 'login' }, '', window.location.pathname);
             }
         }
-
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
-                const pwd = (document.getElementById('loginPassword')?.value || '').trim();
-                const remember = document.getElementById('rememberMe')?.checked;
-                const ok = (email === 'alshifa@gmail.com' && pwd === '123456789');
-                const err = document.getElementById('loginError');
-                if (ok) {
-                    if (remember) localStorage.setItem('insuragent_authed', 'true');
-                    // Persist within current browser session (no re-login on in-app navigation)
-                    sessionStorage.setItem('insuragent_session_authed', 'true');
-                    if (loginContainer && appRoot) {
-                        loginContainer.style.display = 'none';
-                        appRoot.style.display = 'block';
-                        document.body.classList.remove('login-mode');
-                        
-                        // Push main app to browser history
-                        window.history.pushState({ view: 'app' }, '', window.location.href);
-                    }
-                } else if (err) {
-                    err.style.display = 'block';
-                    setTimeout(() => err.style.display = 'none', 3000);
-                }
-            });
+    } else {
+        // Show app, hide login
+        const loginContainer = document.getElementById('loginContainer');
+        const appRoot = document.querySelector('.app-container');
+        
+        if (loginContainer && appRoot) {
+            loginContainer.style.display = 'none';
+            appRoot.style.display = 'block';
+            document.body.classList.remove('login-mode');
+            
+            // Update hash and trigger navigation
+            if (replace) {
+                window.location.replace(`#${page}`);
+            } else {
+                window.location.hash = `#${page}`;
+            }
         }
-    } catch (_) {}
-    // Set initial hash if none exists
+    }
+}
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    // Always start with login - SPA routing that lands on /login first
+    const sessionAuthed = sessionStorage.getItem('insuragent_session_authed') === 'true';
+    
+    // Set initial route based on authentication
+    if (!sessionAuthed) {
+        // Not authenticated - show login
+        navigateTo('login', true);
+    } else {
+        // Authenticated - redirect to dashboard
+        navigateTo('dashboard', true);
+    }
+
+    // Setup login form
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
+            const pwd = (document.getElementById('loginPassword')?.value || '').trim();
+            const remember = document.getElementById('rememberMe')?.checked;
+            const ok = (email === 'alshifa@gmail.com' && pwd === '123456789');
+            const err = document.getElementById('loginError');
+            
+            if (ok) {
+                if (remember) localStorage.setItem('insuragent_authed', 'true');
+                // Set session authentication
+                sessionStorage.setItem('insuragent_session_authed', 'true');
+                // After successful login, redirect to dashboard
+                navigateTo('dashboard', true);
+            } else if (err) {
+                err.style.display = 'block';
+                setTimeout(() => err.style.display = 'none', 3000);
+            }
+        });
+    }
+    
+    // Set initial hash if none exists (fallback)
     if (!window.location.hash) {
         window.location.hash = '#dashboard';
     }
@@ -105,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get the page from data-page attribute
             const pageId = item.getAttribute('data-page');
             
-            // Update the hash which will trigger the hashchange event
-            window.location.hash = `#${pageId}`;
+            // Use new navigation system with authentication guard
+            navigateTo(pageId);
         });
     });
 
@@ -117,7 +158,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle hash changes for navigation
 window.addEventListener('hashchange', () => {
-    currentPage = window.location.hash.substring(1) || 'dashboard';
+    const hash = window.location.hash.substring(1) || 'dashboard';
+    const [page, ...params] = hash.split('/');
+    
+    // Apply authentication guard on hash changes
+    if (!isAuthenticated() && page !== 'login') {
+        // Redirect to login if not authenticated
+        navigateTo('login', true);
+        return;
+    }
+    
+    currentPage = page;
+    
+    // Handle claim detail route
+    if (page === 'claims' && params.length > 0) {
+        const claimId = params[0];
+        showClaimDetail(claimId);
+        return;
+    }
+    
     updatePageVisibility();
     updateActiveSidebarLink();
     initPageSpecificFunctionality();
@@ -198,14 +257,354 @@ function initDashboard() {
  * Initialize Claims page functionality
  */
 function initClaimsPage() {
-    // Claims page initialization
+    // Initialize claims data and table
+    initializeClaimsTable();
+    
+    // Add search functionality
+    const searchInput = document.getElementById('claimsSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterClaimsTable);
+    }
+    
+    // Add filter functionality
+    const filters = ['departmentFilter', 'modeStatusFilter', 'monthFilter'];
+    filters.forEach(filterId => {
+        const filter = document.getElementById(filterId);
+        if (filter) {
+            filter.addEventListener('change', filterClaimsTable);
+        }
+    });
+}
+
+/**
+ * Claims data - static placeholders + dynamic data from CSV
+ */
+let claimsData = [
+    // These will be replaced by CSV data if available
+    {
+        id: 1,
+        patientName: 'John Doe',
+        claimNumber: '12345',
+        department: 'General Medicine',
+        insurance: 'MetLife',
+        mode: 'Review', // If score not 100%, it needs manual review
+        approvalProbability: 80,
+        isDynamic: false
+    },
+    {
+        id: 2,
+        patientName: 'Mohammed',
+        claimNumber: '12345',
+        department: 'General Medicine',
+        insurance: 'MetLife',
+        mode: 'Automated',
+        approvalProbability: 100,
+        isDynamic: false
+    },
+    {
+        id: 3,
+        patientName: 'Hamza',
+        claimNumber: '12345',
+        department: 'General Medicine',
+        insurance: 'MetLife',
+        mode: 'Automated',
+        approvalProbability: 98,
+        isDynamic: false
+    },
+    {
+        id: 4,
+        patientName: 'Rakesh',
+        claimNumber: '12345',
+        department: 'General Medicine',
+        insurance: 'MetLife',
+        mode: 'Review',
+        approvalProbability: 85,
+        isDynamic: false
+    },
+    // Static placeholder rows
+    {
+        id: 5,
+        patientName: 'John Doe',
+        claimNumber: '12345',
+        department: 'Pediatrics',
+        insurance: 'MetLife',
+        mode: 'Automated',
+        approvalProbability: 100,
+        isDynamic: false
+    },
+    {
+        id: 6,
+        patientName: 'Sarah K',
+        claimNumber: '67890',
+        department: 'Cardiology',
+        insurance: 'Allianz',
+        mode: 'Review',
+        approvalProbability: 95,
+        isDynamic: false
+    },
+    {
+        id: 7,
+        patientName: 'Omar T',
+        claimNumber: '54321',
+        department: 'Orthopedics',
+        insurance: 'AXA',
+        mode: 'Automated',
+        approvalProbability: 92,
+        isDynamic: false
+    }
+];
+
+/**
+ * Initialize claims table
+ */
+function initializeClaimsTable() {
+    // Check if there's CSV data from demo page
+    if (demoState && demoState.csvData && demoState.csvData.length > 0) {
+        // Parse CSV data for first 4 rows
+        parseCsvForClaims(demoState.csvData.slice(0, 4));
+    }
+    
+    // Override first 4 rows with fixed sample cases
+    overrideFirstFourRowsWithSampleCases();
+    
+    renderClaimsTable();
+}
+
+/**
+ * Parse CSV data and map to claims format
+ */
+function parseCsvForClaims(csvData) {
+    csvData.forEach((row, index) => {
+        if (index < 4) { // Only first 4 rows
+            const claimData = {
+                id: index + 1,
+                patientName: row.patient_name || row.name || row.patientName || 'Unknown',
+                claimNumber: row.claim_id || row.id || '—',
+                department: row.department || 'General Medicine',
+                insurance: row.insurance || 'MetLife',
+                mode: getClaimMode(row.approval_probability || row.approval || row.score || 80),
+                approvalProbability: getClampedApproval(row.approval_probability || row.approval || row.score || 80),
+                isDynamic: true
+            };
+            
+            // Replace the corresponding static data
+            claimsData[index] = claimData;
+        }
+    });
+}
+
+/**
+ * Override first 4 rows with fixed sample cases
+ */
+function overrideFirstFourRowsWithSampleCases() {
+    const fixedSampleCases = [
+        {
+            id: "101",
+            name: "Ahmed M",
+            department: "General Medicine",
+            insurance: "FMC Insurance",
+            approval: 80
+        },
+        {
+            id: "102",
+            name: "Fatima A",
+            department: "General Medicine",
+            insurance: "FMC Insurance",
+            approval: 80
+        },
+        {
+            id: "103",
+            name: "Mohammed R",
+            department: "General Medicine",
+            insurance: "FMC Insurance",
+            approval: 100
+        },
+        {
+            id: "104",
+            name: "Ali H",
+            department: "General Medicine",
+            insurance: "FMC Insurance",
+            approval: 80
+        }
+    ];
+    
+    // Override the first 4 positions in claimsData
+    fixedSampleCases.forEach((sampleCase, index) => {
+        if (index < 4) {
+            const existingRow = claimsData[index] || {};
+            
+            claimsData[index] = {
+                id: sampleCase.id,
+                patientName: sampleCase.name,
+                claimNumber: sampleCase.id, // Use ID as claim number
+                department: sampleCase.department,
+                insurance: sampleCase.insurance,
+                mode: existingRow.mode || (sampleCase.approval === 100 ? 'Automated' : 'Review'),
+                approvalProbability: sampleCase.approval,
+                isDynamic: false
+            };
+        }
+    });
+}
+
+/**
+ * Get claim mode based on approval probability
+ * If score is not 100%, it means there's an error (exclude or logical issue)
+ * so the claim should undergo manual review
+ */
+function getClaimMode(approval) {
+    const score = getClampedApproval(approval);
+    return score === 100 ? 'Automated' : 'Review';
+}
+
+/**
+ * Clamp approval probability to 0-100 range
+ */
+function getClampedApproval(value) {
+    const num = parseInt(value) || 80;
+    return Math.max(0, Math.min(100, num));
+}
+
+/**
+ * Render the claims table
+ */
+function renderClaimsTable() {
+    const tableBody = document.getElementById('claimsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    claimsData.forEach((claim, index) => {
+        const row = createClaimRow(claim, index);
+        tableBody.appendChild(row);
+    });
+}
+
+/**
+ * Create a claim row element
+ */
+function createClaimRow(claim, index) {
+    const row = document.createElement('div');
+    row.className = `claim-row ${index === 0 ? 'clickable' : ''}`;
+    row.setAttribute('data-claim-id', claim.id);
+    
+    // Only first row is clickable
+    if (index === 0) {
+        row.addEventListener('click', () => {
+            navigateToClaimDetails(claim.claimNumber || claim.id);
+        });
+    }
+    
+    row.innerHTML = `
+        <div class="claim-id-cell">
+            <div class="claim-icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="claim-details">
+                <div class="patient-name">${claim.patientName}</div>
+                <div class="claim-number">${claim.claimNumber}</div>
+            </div>
+        </div>
+        
+        <div class="department-cell">
+            ${claim.department}
+        </div>
+        
+        <div class="insurance-cell">
+            ${claim.insurance}
+        </div>
+        
+        <div class="mode-cell">
+            ${claim.mode}
+        </div>
+        
+        <div class="approval-cell">
+            <span class="approval-percentage">${claim.approvalProbability}%</span>
+            <div class="approval-bar">
+                <div class="approval-bar-fill" style="width: ${claim.approvalProbability}%"></div>
+            </div>
+        </div>
+        
+        <div class="actions-cell">
+            <button class="action-btn" title="View" aria-label="View claim details">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="action-btn" title="Edit" aria-label="Edit claim">
+                <i class="bi bi-pencil"></i>
+            </button>
+        </div>
+    `;
+    
+    return row;
+}
+
+/**
+ * Navigate to claim details page
+ */
+function navigateToClaimDetails(claimId) {
+    // Use client-side navigation to claim detail page
+    window.location.hash = `#claims/${claimId}`;
+}
+
+/**
+ * Filter claims table based on search and filters
+ */
+function filterClaimsTable() {
+    const searchTerm = document.getElementById('claimsSearchInput')?.value.toLowerCase() || '';
+    const departmentFilter = document.getElementById('departmentFilter')?.value || '';
+    const modeStatusFilter = document.getElementById('modeStatusFilter')?.value || '';
+    
+    const rows = document.querySelectorAll('.claim-row');
+    
+    rows.forEach(row => {
+        const claimId = row.getAttribute('data-claim-id');
+        const claim = claimsData.find(c => c.id == claimId);
+        
+        if (!claim) {
+            row.style.display = 'none';
+            return;
+        }
+        
+        const matchesSearch = !searchTerm || 
+            claim.patientName.toLowerCase().includes(searchTerm) ||
+            claim.claimNumber.toLowerCase().includes(searchTerm) ||
+            claim.department.toLowerCase().includes(searchTerm);
+            
+        const matchesDepartment = !departmentFilter || 
+            claim.department.toLowerCase().includes(departmentFilter);
+            
+        const matchesMode = !modeStatusFilter || 
+            claim.mode.toLowerCase() === modeStatusFilter;
+        
+        if (matchesSearch && matchesDepartment && matchesMode) {
+            row.style.display = 'grid';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
 
 /**
  * Initialize Pending Reviews page functionality
  */
 function initPendingPage() {
-    // Pending page initialization
+    // Initialize pending reviews data and table
+    initializePendingTable();
+    
+    // Add search functionality
+    const searchInput = document.getElementById('pendingSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterPendingTable);
+    }
+    
+    // Add filter functionality
+    const filters = ['pendingDepartmentFilter', 'pendingModeStatusFilter', 'pendingMonthFilter'];
+    filters.forEach(filterId => {
+        const filter = document.getElementById(filterId);
+        if (filter) {
+            filter.addEventListener('change', filterPendingTable);
+        }
+    });
 }
 
 /**
@@ -227,6 +626,362 @@ function initUsersPage() {
  */
 function initSettingsPage() {
     // Settings page initialization
+}
+
+/**
+ * Pending Reviews data - filtered from claimsData for manual review cases
+ */
+let pendingData = [];
+
+/**
+ * Initialize pending reviews table
+ */
+function initializePendingTable() {
+    // Filter claims data for pending reviews (score < 100 OR final_decision === "Excluded")
+    pendingData = claimsData.filter(claim => {
+        const approval = claim.approvalProbability || 0;
+        const decision = (claim.final_decision || '').toLowerCase();
+        return approval < 100 || decision === 'excluded';
+    });
+    
+    // Update mode to "Manual Review" for pending cases
+    pendingData.forEach(claim => {
+        claim.mode = 'Manual Review';
+    });
+    
+    renderPendingTable();
+}
+
+/**
+ * Render the pending reviews table
+ */
+function renderPendingTable() {
+    const tableBody = document.getElementById('pendingTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    pendingData.forEach((claim, index) => {
+        const row = createPendingRow(claim, index);
+        tableBody.appendChild(row);
+    });
+}
+
+/**
+ * Create a pending review row element
+ */
+function createPendingRow(claim, index) {
+    const row = document.createElement('div');
+    row.className = `claim-row ${index === 0 ? 'clickable' : ''}`;
+    row.setAttribute('data-claim-id', claim.id);
+    
+    // Only first row is clickable
+    if (index === 0) {
+        row.addEventListener('click', () => {
+            navigateToClaimDetails(claim.claimNumber || claim.id);
+        });
+    }
+    
+    row.innerHTML = `
+        <div class="claim-id-cell">
+            <div class="claim-icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="claim-details">
+                <div class="patient-name">${claim.patientName}</div>
+                <div class="claim-number">${claim.claimNumber}</div>
+            </div>
+        </div>
+        
+        <div class="department-cell">
+            ${claim.department}
+        </div>
+        
+        <div class="insurance-cell">
+            ${claim.insurance}
+        </div>
+        
+        <div class="mode-cell">
+            ${claim.mode}
+        </div>
+        
+        <div class="approval-cell">
+            <span class="approval-percentage">${claim.approvalProbability}%</span>
+            <div class="approval-bar">
+                <div class="approval-bar-fill" style="width: ${claim.approvalProbability}%"></div>
+            </div>
+        </div>
+        
+        <div class="actions-cell">
+            <button class="action-btn" title="View" aria-label="View claim details">
+                <i class="bi bi-eye"></i>
+            </button>
+            <button class="action-btn" title="Edit" aria-label="Edit claim">
+                <i class="bi bi-pencil"></i>
+            </button>
+        </div>
+    `;
+    
+    return row;
+}
+
+/**
+ * Filter pending reviews table based on search and filters
+ */
+function filterPendingTable() {
+    const searchTerm = document.getElementById('pendingSearchInput')?.value.toLowerCase() || '';
+    const departmentFilter = document.getElementById('pendingDepartmentFilter')?.value || '';
+    const modeStatusFilter = document.getElementById('pendingModeStatusFilter')?.value || '';
+    
+    const rows = document.querySelectorAll('#pendingTableBody .claim-row');
+    
+    rows.forEach(row => {
+        const claimId = row.getAttribute('data-claim-id');
+        const claim = pendingData.find(c => c.id == claimId);
+        
+        if (!claim) {
+            row.style.display = 'none';
+            return;
+        }
+        
+        const matchesSearch = !searchTerm || 
+            claim.patientName.toLowerCase().includes(searchTerm) ||
+            claim.claimNumber.toLowerCase().includes(searchTerm) ||
+            claim.department.toLowerCase().includes(searchTerm);
+            
+        const matchesDepartment = !departmentFilter || 
+            claim.department.toLowerCase().includes(departmentFilter);
+            
+        const matchesMode = !modeStatusFilter || 
+            claim.mode.toLowerCase() === modeStatusFilter;
+        
+        if (matchesSearch && matchesDepartment && matchesMode) {
+            row.style.display = 'grid';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+/**
+ * Show claim detail page
+ */
+function showClaimDetail(claimId) {
+    // Hide all page containers
+    const pageContainers = document.querySelectorAll('.page-container');
+    pageContainers.forEach(container => {
+        container.style.display = 'none';
+        container.classList.remove('active');
+    });
+    
+    // Show claim detail container
+    const claimDetailContainer = document.getElementById('claimDetailContainer');
+    if (claimDetailContainer) {
+        claimDetailContainer.style.display = 'block';
+        claimDetailContainer.classList.add('active');
+        
+        // Load and display claim data
+        loadClaimDetailData(claimId);
+    }
+}
+
+/**
+ * Load claim detail data
+ */
+function loadClaimDetailData(claimId) {
+    // Find CSV claim data
+    const csvClaim = findClaimInCsvData(claimId);
+    const staticClaim = claimsData.find(c => c.id == claimId || c.patientName.includes(claimId));
+    const claim = csvClaim || staticClaim;
+    
+    if (!claim) {
+        console.warn(`Claim with ID ${claimId} not found`);
+        return;
+    }
+    
+    // Try to load processed result from localStorage
+    const cachedResult = localStorage.getItem(`claim:${claimId}`);
+    let result = null;
+    try {
+        result = cachedResult ? JSON.parse(cachedResult) : null;
+    } catch (e) {
+        console.warn('Failed to parse cached result:', e);
+    }
+    
+    // Update breadcrumb
+    const breadcrumb = document.getElementById('claimDetailBreadcrumb');
+    if (breadcrumb) {
+        breadcrumb.textContent = claim.patientName || claim.name || `Patient ${claimId}`;
+    }
+    
+    // Update claim details pills
+    updateClaimDetailsPills(claim, result, claimId);
+    
+    // Update info pills
+    updateInfoPills(claim, result);
+    
+    // Update quick actions
+    updateQuickActions(claim, result, claimId);
+}
+
+/**
+ * Find claim in CSV data
+ */
+function findClaimInCsvData(claimId) {
+    if (!demoState.csvData || demoState.csvData.length === 0) {
+        return null;
+    }
+    
+    return demoState.csvData.find(row => 
+        row.patient_id == claimId || 
+        row.id == claimId ||
+        row.case_id == claimId
+    );
+}
+
+/**
+ * Update claim details pills
+ */
+function updateClaimDetailsPills(claim, result, claimId) {
+    // Claim ID
+    const claimDetailId = document.getElementById('claimDetailId');
+    if (claimDetailId) {
+        claimDetailId.textContent = claimId;
+    }
+    
+    // Patient
+    const claimDetailPatient = document.getElementById('claimDetailPatient');
+    if (claimDetailPatient) {
+        claimDetailPatient.textContent = claim.patientName || claim.name || claim.patient_name || '—';
+    }
+    
+    // Insurance - static for now
+    const claimDetailInsurance = document.getElementById('claimDetailInsurance');
+    if (claimDetailInsurance) {
+        claimDetailInsurance.textContent = 'FMC Insurance';
+    }
+    
+    // Policy - static for now
+    const claimDetailPolicy = document.getElementById('claimDetailPolicy');
+    if (claimDetailPolicy) {
+        claimDetailPolicy.textContent = 'FMC Policy';
+    }
+    
+    // Status
+    const claimDetailStatus = document.getElementById('claimDetailStatus');
+    if (claimDetailStatus) {
+        const status = result?.final_decision || 'Pending';
+        claimDetailStatus.textContent = status;
+        
+        // Update status pill styling
+        const statusPill = claimDetailStatus.closest('.status-pill');
+        if (statusPill) {
+            statusPill.className = 'claim-pill status-pill';
+            if (status === 'Allowed') {
+                claimDetailStatus.style.background = '#dcfce7';
+                claimDetailStatus.style.color = '#166534';
+            } else if (status === 'Excluded') {
+                claimDetailStatus.style.background = '#fee2e2';
+                claimDetailStatus.style.color = '#dc2626';
+            } else {
+                claimDetailStatus.style.background = '#fef3c7';
+                claimDetailStatus.style.color = '#92400e';
+            }
+        }
+    }
+    
+    // Approval Probability
+    const claimDetailApproval = document.getElementById('claimDetailApproval');
+    if (claimDetailApproval) {
+        const approval = result?.approval_probability || claim.score || claim.approvalProbability || 80;
+        claimDetailApproval.textContent = `${approval}%`;
+    }
+}
+
+/**
+ * Update info pills
+ */
+function updateInfoPills(claim, result) {
+    // Diagnosis - set to "Gastritis" as requested
+    const claimDetailDiagnosis = document.getElementById('claimDetailDiagnosis');
+    if (claimDetailDiagnosis) {
+        claimDetailDiagnosis.textContent = 'Gastritis';
+    }
+}
+
+/**
+ * Update quick actions
+ */
+function updateQuickActions(claim, result, claimId) {
+    // Update issue content
+    updateIssueCard(result);
+    
+    // Update recommendations
+    updateRecommendationsCard(result);
+    
+    // Store current claim ID for actions
+    window.currentClaimId = claimId;
+}
+
+/**
+ * Update issue card
+ */
+function updateIssueCard(result) {
+    const issueContent = document.getElementById('issueContent');
+    const issueBadge = document.getElementById('issueBadge');
+    
+    // Show Policy Exclusions content as requested
+    if (issueContent) {
+        issueContent.innerHTML = `
+            <div class="issue-title">Policy Exclusions</div>
+            <div class="issue-description">The following items require review due to policy compliance issues:</div>
+            <div class="policy-exclusion-item">
+                <div class="exclusion-header">Pharmacy: Procid 40 mg, 1 tablet daily for 10 days</div>
+                <div class="exclusion-reason">Excluded. The strength of 40 mg is not covered as per the clause.</div>
+            </div>
+        `;
+    }
+    
+    if (issueBadge) {
+        issueBadge.textContent = '1';
+        issueBadge.style.display = 'flex';
+    }
+}
+
+/**
+ * Update recommendations card
+ */
+function updateRecommendationsCard(result) {
+    const recommendationsList = document.getElementById('recommendationsList');
+    if (!recommendationsList) return;
+    
+    recommendationsList.innerHTML = '';
+    
+    // Add the specific Procid recommendation as requested
+    const item = document.createElement('div');
+    item.className = 'recommendation-item';
+    item.innerHTML = `
+        <input type="checkbox" class="recommendation-checkbox" id="rec0">
+        <label for="rec0" class="recommendation-text">Procid 20 mg — once daily for 10 days (approved strength)</label>
+    `;
+    recommendationsList.appendChild(item);
+}
+
+/**
+ * Handle claim actions (Approve/Reject)
+ */
+function handleClaimAction(action) {
+    const claimId = window.currentClaimId;
+    if (!claimId) {
+        console.warn('No claim ID available for action');
+        return;
+    }
+    
+    console.log({ action, id: claimId });
+    
+    // Show success message
+    const actionText = action === 'approve' ? 'approved' : 'rejected';
+    showSuccessToast(`✅ Claim ${claimId} has been ${actionText}`);
 }
 
 /**
@@ -550,31 +1305,74 @@ function showCSVPreview(data, filename) {
 }
 
 /**
- * Process batch verification with progress indication
+ * Process batch verification with progress indication and pause/stop controls
  */
+let batchProcessingState = {
+    isPaused: false,
+    isStopped: false,
+    currentIndex: 0,
+    results: [],
+    totalCases: 0
+};
+
+// Single claim processing state
+let singleClaimProcessingState = {
+    isProcessing: false,
+    isPaused: false,
+    isStopped: false
+};
+
 async function processBatchVerification() {
     try {
         showLoading(true);
         showDemoStep('batch-results');
         createBatchResultsSection();
         
-        const totalCases = demoState.csvData.length;
-        let completedCases = 0;
-        const results = [];
+        // Initialize processing state
+        batchProcessingState = {
+            isPaused: false,
+            isStopped: false,
+            currentIndex: 0,
+            results: [],
+            totalCases: demoState.csvData.length
+        };
+        
+        // Add pause/stop controls
+        addBatchProcessingControls();
         
         // Show initial progress
-        updateBatchProgress(0, `Starting verification of ${totalCases} patients...`);
+        updateBatchProgress(0, `Starting verification of ${batchProcessingState.totalCases} patients...`);
         
         // Process each case individually for real-time progress
         for (let i = 0; i < demoState.csvData.length; i++) {
+            batchProcessingState.currentIndex = i;
+            
+            // Check if processing is stopped
+            if (batchProcessingState.isStopped) {
+                updateBatchProgress(
+                    Math.round((i / batchProcessingState.totalCases) * 100), 
+                    `Processing stopped by user. Processed ${i} of ${batchProcessingState.totalCases} cases.`
+                );
+                break;
+            }
+            
+            // Check if processing is paused
+            while (batchProcessingState.isPaused && !batchProcessingState.isStopped) {
+                updateBatchProgress(
+                    Math.round((i / batchProcessingState.totalCases) * 100), 
+                    `Processing paused. Completed ${i} of ${batchProcessingState.totalCases} cases. Click Resume to continue.`
+                );
+                await new Promise(resolve => setTimeout(resolve, 500)); // Check every 500ms
+            }
+            
             const patient = demoState.csvData[i];
             
             try {
                 // Update progress to show current case being processed
-                const currentProgress = Math.round((completedCases / totalCases) * 100);
+                const currentProgress = Math.round((i / batchProcessingState.totalCases) * 100);
                 updateBatchProgress(
                     currentProgress, 
-                    `Processing case ${completedCases + 1} of ${totalCases}... (${currentProgress}%)`
+                    `Processing case ${i + 1} of ${batchProcessingState.totalCases}... (${currentProgress}%)`
                 );
                 
                 // Verify individual case using the existing single case endpoint
@@ -598,19 +1396,16 @@ async function processBatchVerification() {
                 }
                 
                 // Store result with case ID
-                results.push({
+                batchProcessingState.results.push({
                     case_id: i + 1,
                     result: result
                 });
                 
-                // Increment completed cases
-                completedCases++;
-                
                 // Update progress with completion
-                const newProgress = Math.round((completedCases / totalCases) * 100);
+                const newProgress = Math.round(((i + 1) / batchProcessingState.totalCases) * 100);
                 updateBatchProgress(
                     newProgress, 
-                    `Completed case ${completedCases} of ${totalCases}... (${newProgress}%)`
+                    `Completed case ${i + 1} of ${batchProcessingState.totalCases}... (${newProgress}%)`
                 );
                 
                 // Create the result object explicitly to avoid spread operator issues
@@ -624,8 +1419,6 @@ async function processBatchVerification() {
                     patientName: patient.patientName || `Patient #${i + 1}`,
                     claimId: i + 1
                 };
-                
-
                 
                 // Add patient card immediately for visual feedback
                 addPatientResultCard(cardData, i);
@@ -649,7 +1442,7 @@ async function processBatchVerification() {
                 console.error(`Error processing case ${i + 1}:`, error);
                 
                 // Store error result
-                results.push({
+                batchProcessingState.results.push({
                     case_id: i + 1,
                     error: error.message
                 });
@@ -676,20 +1469,28 @@ async function processBatchVerification() {
                     }, 50);
                 }
                 
-                completedCases++;
-                const newProgress = Math.round((completedCases / totalCases) * 100);
+                const newProgress = Math.round(((i + 1) / batchProcessingState.totalCases) * 100);
                 updateBatchProgress(
                     newProgress, 
-                    `Completed case ${completedCases} of ${totalCases}... (${newProgress}%)`
+                    `Completed case ${i + 1} of ${batchProcessingState.totalCases}... (${newProgress}%)`
                 );
             }
         }
         
         // Store results in demo state
-        demoState.batchResults = results;
+        demoState.batchResults = batchProcessingState.results;
         
         // Show final completion message
-        updateBatchProgress(100, `All ${totalCases} patients have been verified successfully!`);
+        if (!batchProcessingState.isStopped) {
+            updateBatchProgress(100, `All ${batchProcessingState.totalCases} patients have been verified successfully!`);
+        } else {
+            // Save processed results even when stopped
+            demoState.batchResults = batchProcessingState.results;
+            saveDemoState();
+        }
+        
+        // Hide processing controls when done
+        hideBatchProcessingControls();
         
     } catch (error) {
         showAlert('Error processing batch: ' + error.message, 'error');
@@ -1431,7 +2232,7 @@ async function verifyPatientCase(patient) {
 }
 
 /**
- * Handle single claim verification
+ * Handle single claim verification with pause/stop controls
  */
 async function handleSingleClaimVerification() {
     const complaint = document.getElementById('complaint')?.value.trim();
@@ -1447,7 +2248,26 @@ async function handleSingleClaimVerification() {
     }
 
     try {
+        // Initialize processing state
+        singleClaimProcessingState = {
+            isProcessing: true,
+            isPaused: false,
+            isStopped: false
+        };
+        
+        // Add processing controls
+        addSingleClaimProcessingControls();
         showLoading(true);
+        
+        // Check for pause/stop before processing
+        while (singleClaimProcessingState.isPaused && !singleClaimProcessingState.isStopped) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        if (singleClaimProcessingState.isStopped) {
+            showAlert('Single claim verification was stopped by user', 'info');
+            return;
+        }
 
         const response = await fetch(VERIFY_CASE_ENDPOINT, {
             method: 'POST',
@@ -1468,12 +2288,20 @@ async function handleSingleClaimVerification() {
         }
 
         const result = await response.json();
-        displaySingleClaimResult(result);
+        
+        // Check again for stop before displaying result
+        if (!singleClaimProcessingState.isStopped) {
+            displaySingleClaimResult(result);
+        }
 
     } catch (error) {
         console.error('Verification error:', error);
-        showAlert('Error verifying claim: ' + error.message, 'error');
+        if (!singleClaimProcessingState.isStopped) {
+            showAlert('Error verifying claim: ' + error.message, 'error');
+        }
     } finally {
+        singleClaimProcessingState.isProcessing = false;
+        hideSingleClaimProcessingControls();
         showLoading(false);
     }
 }
@@ -3470,7 +4298,7 @@ function generateClinicalReasoning(flaggedField, flaggedItem, patient, result) {
 // Sample Cases Download Function
 function downloadSampleCase(caseType) {
     const sampleCases = {
-        mixed: {
+        sample: {
             filename: 'test_cases.csv',
             data: [
                 ['patient_name', 'chief_complaints', 'symptoms', 'diagnosis_description', 'service_detail', 'payer_product_category_name'],
@@ -3508,5 +4336,245 @@ function downloadSampleCase(caseType) {
     
     // Show success message
     showAlert(`Sample case "${caseType}" downloaded successfully!`, 'success');
+}
+
+/**
+ * Add batch processing controls (pause/stop buttons)
+ */
+function addBatchProcessingControls() {
+    const progressContainer = document.querySelector('.progress-container');
+    if (!progressContainer) return;
+    
+    // Remove existing controls
+    const existingControls = document.getElementById('batchProcessingControls');
+    if (existingControls) {
+        existingControls.remove();
+    }
+    
+    const controlsHTML = `
+        <div id="batchProcessingControls" class="processing-controls mt-3">
+            <div class="btn-group" role="group">
+                <button id="pauseBatchBtn" class="btn btn-warning btn-sm" onclick="pauseBatchProcessing()">
+                    <i class="bi bi-pause-fill me-1"></i>Pause
+                </button>
+                <button id="resumeBatchBtn" class="btn btn-success btn-sm" onclick="resumeBatchProcessing()" style="display: none;">
+                    <i class="bi bi-play-fill me-1"></i>Resume
+                </button>
+                <button id="stopBatchBtn" class="btn btn-danger btn-sm" onclick="stopBatchProcessing()">
+                    <i class="bi bi-stop-fill me-1"></i>Stop
+                </button>
+            </div>
+            <div class="processing-status-text mt-2">
+                <small class="text-muted">Use Pause to temporarily suspend processing, or Stop to terminate and save current progress.</small>
+            </div>
+        </div>
+    `;
+    
+    progressContainer.insertAdjacentHTML('afterend', controlsHTML);
+}
+
+/**
+ * Hide batch processing controls
+ */
+function hideBatchProcessingControls() {
+    const controls = document.getElementById('batchProcessingControls');
+    if (controls) {
+        controls.style.display = 'none';
+    }
+}
+
+/**
+ * Pause batch processing
+ */
+function pauseBatchProcessing() {
+    batchProcessingState.isPaused = true;
+    
+    // Update UI
+    const pauseBtn = document.getElementById('pauseBatchBtn');
+    const resumeBtn = document.getElementById('resumeBatchBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    if (resumeBtn) resumeBtn.style.display = 'inline-block';
+    
+    showSuccessToast('⏸️ Batch processing paused. Click Resume to continue.');
+}
+
+/**
+ * Resume batch processing
+ */
+function resumeBatchProcessing() {
+    batchProcessingState.isPaused = false;
+    
+    // Update UI
+    const pauseBtn = document.getElementById('pauseBatchBtn');
+    const resumeBtn = document.getElementById('resumeBatchBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'inline-block';
+    if (resumeBtn) resumeBtn.style.display = 'none';
+    
+    showSuccessToast('▶️ Batch processing resumed.');
+}
+
+/**
+ * Stop batch processing
+ */
+function stopBatchProcessing() {
+    batchProcessingState.isStopped = true;
+    batchProcessingState.isPaused = false; // Clear pause state
+    
+    // Update UI
+    const controls = document.getElementById('batchProcessingControls');
+    if (controls) {
+        controls.innerHTML = `
+            <div class="alert alert-warning alert-sm mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Processing Stopped:</strong> All completed results have been saved. You can view them below.
+            </div>
+        `;
+    }
+    
+    showSuccessToast('🛑 Batch processing stopped. Completed results have been saved.');
+}
+
+/**
+ * Add single claim processing controls (pause/stop buttons)
+ */
+function addSingleClaimProcessingControls() {
+    const verifySingleBtn = document.getElementById('verifySingleBtn');
+    if (!verifySingleBtn) return;
+    
+    // Check if controls already exist
+    const existingControls = document.getElementById('singleClaimProcessingControls');
+    if (existingControls) {
+        existingControls.style.display = 'block';
+        return;
+    }
+    
+    const controlsHTML = `
+        <div id="singleClaimProcessingControls" class="processing-controls mt-3">
+            <div class="btn-group" role="group">
+                <button id="pauseSingleBtn" class="btn btn-warning btn-sm" onclick="pauseSingleClaimProcessing()">
+                    <i class="bi bi-pause-fill me-1"></i>Pause
+                </button>
+                <button id="resumeSingleBtn" class="btn btn-success btn-sm" onclick="resumeSingleClaimProcessing()" style="display: none;">
+                    <i class="bi bi-play-fill me-1"></i>Resume
+                </button>
+                <button id="stopSingleBtn" class="btn btn-danger btn-sm" onclick="stopSingleClaimProcessing()">
+                    <i class="bi bi-stop-fill me-1"></i>Stop
+                </button>
+            </div>
+            <div class="processing-status-text mt-2">
+                <small class="text-muted">Use Pause to temporarily suspend verification, or Stop to cancel processing.</small>
+            </div>
+        </div>
+    `;
+    
+    verifySingleBtn.parentElement.insertAdjacentHTML('afterend', controlsHTML);
+}
+
+/**
+ * Hide single claim processing controls
+ */
+function hideSingleClaimProcessingControls() {
+    const controls = document.getElementById('singleClaimProcessingControls');
+    if (controls) {
+        controls.style.display = 'none';
+    }
+}
+
+/**
+ * Pause single claim processing
+ */
+function pauseSingleClaimProcessing() {
+    singleClaimProcessingState.isPaused = true;
+    
+    // Update UI
+    const pauseBtn = document.getElementById('pauseSingleBtn');
+    const resumeBtn = document.getElementById('resumeSingleBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    if (resumeBtn) resumeBtn.style.display = 'inline-block';
+    
+    showSuccessToast('⏸️ Single claim processing paused. Click Resume to continue.');
+}
+
+/**
+ * Resume single claim processing
+ */
+function resumeSingleClaimProcessing() {
+    singleClaimProcessingState.isPaused = false;
+    
+    // Update UI
+    const pauseBtn = document.getElementById('pauseSingleBtn');
+    const resumeBtn = document.getElementById('resumeSingleBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'inline-block';
+    if (resumeBtn) resumeBtn.style.display = 'none';
+    
+    showSuccessToast('▶️ Single claim processing resumed.');
+}
+
+/**
+ * Stop single claim processing
+ */
+function stopSingleClaimProcessing() {
+    singleClaimProcessingState.isStopped = true;
+    singleClaimProcessingState.isPaused = false; // Clear pause state
+    
+    // Update UI
+    const controls = document.getElementById('singleClaimProcessingControls');
+    if (controls) {
+        controls.innerHTML = `
+            <div class="alert alert-warning alert-sm mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Processing Stopped:</strong> Single claim verification was cancelled.
+            </div>
+        `;
+    }
+    
+    showSuccessToast('🛑 Single claim processing stopped.');
+}
+
+/**
+ * Handle sidebar back button functionality - Simple Workflow
+ * From ANY page (except /dashboard): go to /dashboard
+ * From /dashboard: go to /login
+ */
+function handleSidebarBack() {
+    const currentPath = window.location.hash.substring(1) || 'dashboard';
+    
+    if (currentPath !== 'dashboard') {
+        // From any page except dashboard: go to dashboard
+        navigateTo('dashboard', true);
+    } else {
+        // From dashboard: go to login
+        // Clear session to ensure proper logout
+        sessionStorage.removeItem('insuragent_session_authed');
+        navigateTo('login', true);
+    }
+}
+
+/**
+ * Redirect to login page
+ */
+function redirectToLogin() {
+    // Clear session storage to ensure fresh login
+    sessionStorage.removeItem('insuragent_session_authed');
+    
+    // Show login container and hide app
+    const loginContainer = document.getElementById('loginContainer');
+    const appRoot = document.querySelector('.app-container');
+    
+    if (loginContainer && appRoot) {
+        loginContainer.style.display = 'block';
+        appRoot.style.display = 'none';
+        document.body.classList.add('login-mode');
+        
+        // Update browser state
+        window.history.pushState({ view: 'login' }, '', window.location.pathname);
+    } else {
+        // Fallback: reload page to login
+        window.location.reload();
+    }
 }
 

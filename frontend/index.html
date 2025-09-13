@@ -49,7 +49,12 @@
         <!-- Sidebar Navigation -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h3 class="logo">Insur<span>Agent</span></h3>
+                <div class="sidebar-header-content">
+                    <h3 class="logo">Insur<span>Agent</span></h3>
+                    <button class="sidebar-back-btn" id="sidebarBackBtn" onclick="handleSidebarBack()" title="Go Back">
+                        ⟵|
+                    </button>
+                </div>
             </div>
             <nav class="sidebar-menu sidebar-nav">
                 <a href="#dashboard" class="menu-item active" data-page="dashboard">
@@ -335,37 +340,365 @@
 
             <!-- Claims Page -->
             <div id="claimsContainer" class="page-container" style="display: none;">
-                <div class="section-header">
-                    <h2>Claims Management</h2>
-                    <p>Manage and review insurance claims</p>
+                <div class="claims-page">
+                    <!-- Page Header -->
+                    <div class="claims-header">
+                        <h1 class="claims-title">Manage Claims</h1>
+                        
+                        <!-- Top Controls -->
+                        <div class="claims-controls">
+                            <!-- Search Input -->
+                            <div class="search-input-container">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" placeholder="Search" class="search-input" id="claimsSearchInput">
+                            </div>
+                            
+                            <!-- Filter Dropdowns -->
+                            <div class="filter-dropdowns">
+                                <div class="dropdown-container">
+                                    <select class="filter-dropdown" id="departmentFilter">
+                                        <option value="">Department</option>
+                                        <option value="general">General Medicine</option>
+                                        <option value="pediatrics">Pediatrics</option>
+                                        <option value="cardiology">Cardiology</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down dropdown-chevron"></i>
+                                </div>
+                                
+                                <div class="dropdown-container">
+                                    <select class="filter-dropdown" id="modeStatusFilter">
+                                        <option value="">Mode Status</option>
+                                        <option value="automated">Automated</option>
+                                        <option value="review">Review</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down dropdown-chevron"></i>
+                                </div>
+                                
+                                <div class="dropdown-container">
+                                    <select class="filter-dropdown" id="monthFilter">
+                                        <option value="october">October</option>
+                                        <option value="november">November</option>
+                                        <option value="december">December</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down dropdown-chevron"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Claims Table -->
+                    <div class="claims-table-container">
+                        <!-- Table Header -->
+                        <div class="claims-table-header">
+                            <div class="table-col col-claim-id">Claim ID</div>
+                            <div class="table-col col-department">Department</div>
+                            <div class="table-col col-insurance">Insurance</div>
+                            <div class="table-col col-mode">Mode</div>
+                            <div class="table-col col-probability">Approval Probability</div>
+                            <div class="table-col col-actions">Actions</div>
+                        </div>
+                        
+                        <!-- Claims Rows -->
+                        <div class="claims-table-body" id="claimsTableBody">
+                            <!-- Dynamic rows will be populated here -->
+                        </div>
+                    </div>
                 </div>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Claims management page is under development.
+            </div>
+
+            <!-- Claim Detail Page -->
+            <div id="claimDetailContainer" class="page-container" style="display: none;">
+                <!-- Header -->
+                <div class="claim-detail-header">
+                    <div class="breadcrumb-section">
+                        <button class="back-arrow-btn" onclick="navigateTo('claims')">
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
+                        <nav class="breadcrumb">
+                            <span class="breadcrumb-item">Manage Claims</span>
+                            <span class="breadcrumb-separator">></span>
+                            <span class="breadcrumb-item current" id="claimDetailBreadcrumb">Patient Name</span>
+                        </nav>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="claim-detail-tabs">
+                        <button class="tab-btn active" data-tab="overview">Overview</button>
+                        <button class="tab-btn" data-tab="eligibility">Claim Eligibility</button>
+                        <button class="tab-btn" data-tab="medical">Medical Details</button>
+                        <button class="tab-btn" data-tab="treatments">Treatments & Procedures</button>
+                        <button class="tab-btn" data-tab="decision">Claim Decision</button>
+                    </div>
+                </div>
+                
+                <!-- Overview Tab Content -->
+                <div class="claim-detail-content">
+                    <div class="claim-detail-overview" id="overviewTab">
+                        <!-- Claim Details Pills Row -->
+                        <div class="claim-details-pills">
+                            <div class="claim-pill">
+                                <span class="pill-label">Claim ID</span>
+                                <span class="pill-value" id="claimDetailId">—</span>
+                            </div>
+                            <div class="claim-pill">
+                                <span class="pill-label">Patient</span>
+                                <span class="pill-value" id="claimDetailPatient">—</span>
+                            </div>
+                            <div class="claim-pill">
+                                <span class="pill-label">Insurance</span>
+                                <span class="pill-value" id="claimDetailInsurance">FMC Insurance</span>
+                            </div>
+                            <div class="claim-pill">
+                                <span class="pill-label">Policy</span>
+                                <span class="pill-value" id="claimDetailPolicy">FMC Policy</span>
+                            </div>
+                            <div class="claim-pill status-pill">
+                                <span class="pill-label">Status</span>
+                                <span class="pill-value" id="claimDetailStatus">Pending</span>
+                            </div>
+                            <div class="claim-pill">
+                                <span class="pill-label">Approval Probability</span>
+                                <span class="pill-value" id="claimDetailApproval">—</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Info Pills Row -->
+                        <div class="info-pills-row">
+                            <div class="info-pill">
+                                <div class="info-pill-icon">
+                                    <i class="bi bi-file-medical"></i>
+                                </div>
+                                <div class="info-pill-content">
+                                    <span class="info-pill-label">Diagnosis</span>
+                                    <span class="info-pill-value" id="claimDetailDiagnosis">—</span>
+                                </div>
+                            </div>
+                            <div class="info-pill">
+                                <div class="info-pill-icon">
+                                    <i class="bi bi-clock"></i>
+                                </div>
+                                <div class="info-pill-content">
+                                    <span class="info-pill-label">Duration of illness</span>
+                                    <span class="info-pill-value">10 Days</span>
+                                </div>
+                            </div>
+                            <div class="info-pill">
+                                <div class="info-pill-icon">
+                                    <i class="bi bi-paperclip"></i>
+                                </div>
+                                <div class="info-pill-content">
+                                    <span class="info-pill-label">Documents & Attachments</span>
+                                    <span class="info-pill-value link">View Documents</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="quick-actions-section">
+                            <h3 class="quick-actions-title">Quick Actions</h3>
+                            <div class="quick-actions-cards">
+                                <!-- Issue Card -->
+                                <div class="quick-action-card issue-card">
+                                    <div class="card-header">
+                                        <div class="card-title-section">
+                                            <h4 class="card-title">Treatments & Procedure</h4>
+                                            <span class="issue-badge" id="issueBadge">1</span>
+                                        </div>
+                                        <button class="why-chip">why?</button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="issue-content" id="issueContent">
+                                            No issues detected
+                                        </div>
+                                        <button class="edit-btn">Edit</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recommendations Card -->
+                                <div class="quick-action-card recommendations-card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">Recommended</h4>
+                                        <button class="generate-new-btn">Generate New</button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="recommendations-list" id="recommendationsList">
+                                            <!-- Dynamic recommendations will be populated here -->
+                                        </div>
+                                    </div>
+                                    <div class="card-actions">
+                                        <button class="btn btn-primary approve-btn" onclick="handleClaimAction('approve')">
+                                            Approve
+                                        </button>
+                                        <button class="btn btn-secondary reject-btn" onclick="handleClaimAction('reject')">
+                                            Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Pending Page -->
             <div id="pendingContainer" class="page-container" style="display: none;">
-                <div class="section-header">
-                    <h2>Pending Reviews</h2>
-                    <p>Claims awaiting manual review</p>
-                </div>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Pending reviews page is under development.
+                <div class="claims-page">
+                    <!-- Page Header -->
+                    <div class="claims-header">
+                        <h1 class="claims-title">Manage Claims</h1>
+                        
+                        <!-- Top Controls -->
+                        <div class="claims-controls">
+                            <!-- Search Input -->
+                            <div class="search-input-container">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" placeholder="Search" class="search-input" id="pendingSearchInput">
+                            </div>
+                            
+                            <!-- Filter Dropdowns -->
+                            <div class="filter-dropdowns">
+                                <div class="dropdown-container">
+                                    <select class="filter-dropdown" id="pendingDepartmentFilter">
+                                        <option value="">Department</option>
+                                        <option value="general medicine">General Medicine</option>
+                                        <option value="pediatrics">Pediatrics</option>
+                                        <option value="cardiology">Cardiology</option>
+                                        <option value="orthopedics">Orthopedics</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down dropdown-chevron"></i>
+                                </div>
+                                
+                                <div class="dropdown-container">
+                                    <select class="filter-dropdown" id="pendingModeStatusFilter">
+                                        <option value="">Mode Status</option>
+                                        <option value="manual review">Manual Review</option>
+                                        <option value="automated">Automated</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down dropdown-chevron"></i>
+                                </div>
+                                
+                                <div class="dropdown-container">
+                                    <select class="filter-dropdown" id="pendingMonthFilter">
+                                        <option value="october">October</option>
+                                        <option value="november">November</option>
+                                        <option value="december">December</option>
+                                    </select>
+                                    <i class="bi bi-chevron-down dropdown-chevron"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Claims Table -->
+                    <div class="claims-table-container">
+                        <!-- Table Header -->
+                        <div class="claims-table-header">
+                            <div class="table-col col-claim-id">Claim ID</div>
+                            <div class="table-col col-department">Department</div>
+                            <div class="table-col col-insurance">Insurance</div>
+                            <div class="table-col col-mode">Mode</div>
+                            <div class="table-col col-probability">Approval Probability</div>
+                            <div class="table-col col-actions">Actions</div>
+                        </div>
+                        
+                        <!-- Claims Rows -->
+                        <div class="claims-table-body" id="pendingTableBody">
+                            <!-- Dynamic rows will be populated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Finance Page -->
             <div id="financeContainer" class="page-container" style="display: none;">
-                <div class="section-header">
-                    <h2>Financial Analytics</h2>
-                    <p>Financial reports and analytics</p>
-                </div>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Financial analytics page is under development.
+                <div class="finance-page">
+                    <!-- Header -->
+                    <div class="finance-header">
+                        <div class="breadcrumb-section">
+                            <button class="back-arrow-btn" onclick="navigateTo('dashboard')">
+                                <i class="bi bi-arrow-left"></i>
+                            </button>
+                            <h1 class="finance-title">Finance</h1>
+                        </div>
+                        
+                        <!-- Tabs -->
+                        <div class="finance-tabs">
+                            <button class="tab-btn active" data-tab="overview">Overview</button>
+                            <button class="tab-btn" data-tab="payouts">Payment Payouts</button>
+                            <button class="tab-btn" data-tab="revenue">Revenue Impacts</button>
+                            <button class="tab-btn" data-tab="rejections">Claim Rejections</button>
+                            <button class="tab-btn" data-tab="analysis">Payment Mode Analysis</button>
+                            <button class="tab-btn" data-tab="forecast">Financial Risk & Forecast</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Finance Content -->
+                    <div class="finance-content">
+                        <!-- Financial Overview Section -->
+                        <div class="finance-section">
+                            <h3 class="section-title">Financial Overview</h3>
+                            <div class="finance-overview-grid">
+                                <div class="finance-card">
+                                    <div class="card-label">Total Claim Processed</div>
+                                    <div class="card-value">1,245</div>
+                                </div>
+                                <div class="finance-card">
+                                    <div class="card-label">Claimed Amount</div>
+                                    <div class="card-value">BD 20,000</div>
+                                </div>
+                                <div class="finance-card">
+                                    <div class="card-label">Approved Amount</div>
+                                    <div class="card-value">BD 15,000</div>
+                                </div>
+                                <div class="finance-card">
+                                    <div class="card-label">Rejected Amount</div>
+                                    <div class="card-value">1,245</div>
+                                </div>
+                                <div class="finance-card">
+                                    <div class="card-label">Unsettled Amount</div>
+                                    <div class="card-value">1,245</div>
+                                </div>
+                                <div class="finance-card">
+                                    <div class="card-label">Final Rejection</div>
+                                    <div class="card-value">1,245</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pending Payout & Settlements Section -->
+                        <div class="finance-section">
+                            <h3 class="section-title">Pending Payout & Settlements</h3>
+                            <div class="payout-grid">
+                                <div class="finance-card payout-card">
+                                    <div class="card-label">Total Approved Claims Awaiting Payment</div>
+                                    <div class="card-value">120</div>
+                                </div>
+                                <div class="finance-card payout-card">
+                                    <div class="card-label">Average Processing Time for Payouts</div>
+                                    <div class="card-value">7 Days</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Action Section -->
+                        <div class="finance-section">
+                            <h3 class="section-title">Quick Action</h3>
+                            <div class="quick-actions-grid">
+                                <button class="action-btn btn-reports">
+                                    <i class="bi bi-graph-up"></i>
+                                    View Full Reports
+                                </button>
+                                <button class="action-btn btn-payouts">
+                                    <i class="bi bi-credit-card"></i>
+                                    Process Payouts
+                                </button>
+                                <button class="action-btn btn-investigate">
+                                    <i class="bi bi-search"></i>
+                                    Investigate Rejections
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

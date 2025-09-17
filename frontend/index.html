@@ -112,13 +112,25 @@
                         <span>English</span>
                         <i class="bi bi-chevron-down"></i>
                     </div>
-                    <div class="user-profile">
+                    <div class="user-profile" id="userProfileBtn" aria-haspopup="true" aria-expanded="false">
                         <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Profile" class="profile-image">
                         <div class="user-info">
                             <span class="user-name">Ahmed</span>
                             <span class="user-role">Admin</span>
                         </div>
                         <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <!-- Profile Dropdown -->
+                    <div class="profile-dropdown" id="profileDropdown" role="menu" aria-hidden="true" style="display:none;">
+                        <button class="dropdown-item" role="menuitem">
+                            <i class="bi bi-person me-2"></i>Profile
+                        </button>
+                        <button class="dropdown-item" role="menuitem">
+                            <i class="bi bi-gear me-2"></i>Settings
+                        </button>
+                        <button class="dropdown-item logout-item" id="logoutBtn" role="menuitem">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
                     </div>
                 </div>
             </div>
@@ -833,25 +845,19 @@
                 </div>
 
                 <!-- Sample Cases Section -->
-                <div class="sample-cases-section">
-                    <div class="sample-cases-card">
-                        <h4><i class="bi bi-download me-2"></i>Sample Test Cases</h4>
-                        <p class="text-muted mb-3">Download sample CSV file to test the system</p>
-                        
-                        <div class="row justify-content-center">
-                            <div class="col-md-6">
-                                <div class="sample-case-card">
-                                    <div class="sample-case-header">
-                                        <i class="bi bi-file-earmark-medical text-info"></i>
-                                    </div>
-                                    <div class="sample-case-content">
-                                        <button class="btn btn-primary btn-sm w-100" onclick="downloadSampleCase('mixed')">
-                                            <i class="bi bi-download me-1"></i>Download CSV
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                <div id="sampleCasesSection" class="max-w-3xl mx-auto px-4 md:px-0 mt-6 bg-gray-50 rounded-lg p-4" style="display: none;">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="bi bi-download h-5 w-5 text-indigo-500"></i>
+                                Sample Test Cases
+                            </h3>
+                            <p class="text-sm text-gray-500">Download a sample CSV to test the system.</p>
                         </div>
+                        <button class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition" onclick="downloadSampleCase('sample')">
+                            <i class="bi bi-download h-4 w-4"></i>
+                            Download CSV
+                        </button>
                     </div>
                 </div>
 

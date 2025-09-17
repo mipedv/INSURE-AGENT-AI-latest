@@ -19,6 +19,37 @@ let demoState = {
     processingProgress: 0
 };
 
+// Sample Test Cases card visibility state
+let showSample = sessionStorage.getItem("hideSample") !== "1";
+
+/**
+ * Show or hide the Sample Test Cases card based on state
+ */
+function updateSampleCasesVisibility() {
+    const sampleCasesSection = document.getElementById('sampleCasesSection');
+    if (sampleCasesSection) {
+        sampleCasesSection.style.display = showSample ? 'block' : 'none';
+    }
+}
+
+/**
+ * Hide the Sample Test Cases card and remember this state
+ */
+function hideSampleCases() {
+    showSample = false;
+    sessionStorage.setItem("hideSample", "1");
+    updateSampleCasesVisibility();
+}
+
+/**
+ * Show the Sample Test Cases card and reset the state
+ */
+function showSampleCases() {
+    showSample = true;
+    sessionStorage.removeItem("hideSample");
+    updateSampleCasesVisibility();
+}
+
 // DOM Elements
 const sidebar = document.querySelector('.sidebar');
 const menuToggle = document.querySelector('.menu-toggle');
@@ -142,6 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
     menuItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
+            
+            // Auto-hide sidebar on mobile when menu item is clicked
+            if (window.innerWidth <= 991.98 && sidebar) {
+                sidebar.classList.remove('show');
+            }
             
             // Get the page from data-page attribute
             const pageId = item.getAttribute('data-page');
@@ -999,6 +1035,9 @@ function initDemoPage() {
     
     // Show initial upload step
     showDemoStep('upload');
+    
+    // Update Sample Test Cases card visibility
+    updateSampleCasesVisibility();
 }
 
 /**
@@ -1015,6 +1054,9 @@ function resetDemoState() {
     
     // Save state to localStorage for navigation persistence
     localStorage.setItem('demoState', JSON.stringify(demoState));
+    
+    // Show Sample Test Cases card when demo state is reset
+    showSampleCases();
 }
 
 /**
@@ -1055,6 +1097,9 @@ function forceClearCache() {
     
     // Return to upload step
     showDemoStep('upload');
+    
+    // Show Sample Test Cases card when cache is cleared
+    showSampleCases();
 }
 
 /**
@@ -1245,6 +1290,9 @@ async function handleFileSelection(file) {
                     // Show preview
                     showCSVPreview(mappedData, file.name);
                     showDemoStep('preview');
+                    
+                    // Hide Sample Test Cases card when CSV is successfully uploaded
+                    hideSampleCases();
                 },
                 error: function(error) {
                     showAlert('Error reading CSV file: ' + error.message, 'error');
@@ -1324,6 +1372,9 @@ let singleClaimProcessingState = {
 
 async function processBatchVerification() {
     try {
+        // Hide Sample Test Cases card when verification starts
+        hideSampleCases();
+        
         showLoading(true);
         showDemoStep('batch-results');
         createBatchResultsSection();
@@ -2235,6 +2286,9 @@ async function verifyPatientCase(patient) {
  * Handle single claim verification with pause/stop controls
  */
 async function handleSingleClaimVerification() {
+    // Hide Sample Test Cases card when single claim verification starts
+    hideSampleCases();
+    
     const complaint = document.getElementById('complaint')?.value.trim();
     const symptoms = document.getElementById('symptoms')?.value.trim();
     const diagnosis = document.getElementById('diagnosis')?.value.trim();
@@ -3052,10 +3106,43 @@ function handleNavigation() {
 function initializeMobileMenu() {
     if (menuToggle && sidebar) {
         menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
+            // Toggle sidebar visibility on mobile
+            sidebar.classList.toggle('show');
         });
     }
 }
+
+// Wire up profile dropdown and logout
+document.addEventListener('DOMContentLoaded', () => {
+    const userProfileBtn = document.getElementById('userProfileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (userProfileBtn && profileDropdown) {
+        userProfileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = profileDropdown.style.display === 'none' || profileDropdown.style.display === '';
+            profileDropdown.style.display = isHidden ? 'block' : 'none';
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!profileDropdown.contains(e.target) && !userProfileBtn.contains(e.target)) {
+                profileDropdown.style.display = 'none';
+            }
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            // Clear session and redirect to login
+            sessionStorage.removeItem('insuragent_session_authed');
+            navigateTo('login', true);
+            // Also hide dropdown
+            if (profileDropdown) profileDropdown.style.display = 'none';
+        });
+    }
+});
 
 function initializeFileUpload() {
     // This is handled in initializeUploadArea() for demo page
